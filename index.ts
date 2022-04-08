@@ -64,7 +64,7 @@ async function getAvatar(author: User): Promise<string> {
 			const data = new FormData();
 
 			data.append('file', createReadStream(`${id}.png`));
-			const hash = await api.uploadFile(data);
+			const hash = await api.uploadFile(data, 'discord-bridge-avatars');
 			await prisma.avatar.create({
 				data: {
 					discordAvatarUrl: url,

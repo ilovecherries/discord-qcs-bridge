@@ -5,6 +5,7 @@ import WebSocket = require("ws");
 import { Comment } from "./types/Comment";
 import { WebsocketResult } from "./types/WebsocketResult";
 import FormData from 'form-data';
+import { format } from "path";
 
 export const API_DOMAIN = "qcs.shsbs.xyz";
 
@@ -144,6 +145,10 @@ export class QCS {
   }
 
   public async uploadFile(data: FormData, bucket?: string): Promise<string> {
+    if (bucket) {
+      data.append("globalPerms", ".");
+      data.append("values[bucket]", bucket);
+    }
     const headers = {
       Authorization: `Bearer ${this.token}`,
       'Content-Type': 'multipart/form-data',
