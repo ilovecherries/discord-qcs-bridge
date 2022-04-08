@@ -1,0 +1,35 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DB")
+}
+
+model Channel {
+  discordChannelId String @id @unique
+  qcsChannelId Int
+}
+
+model WebhookMessage {
+  webhookId String
+  webhookMessageId String @id @unique
+  webhookMessageChannelId String
+  qcsMessageId Int
+}
+
+model DiscordMessageStore {
+  discordMessageId String @unique
+  qcsMessageId Int @unique
+  qcsContentId Int
+}
+
+model Avatar {
+  qcsHash String @unique
+  discordAvatarUrl String @unique
+  discordUid String
+}

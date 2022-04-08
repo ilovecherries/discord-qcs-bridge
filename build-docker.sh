@@ -1,0 +1,1 @@
+sudo docker build --tag discord-qcs-bridge .
