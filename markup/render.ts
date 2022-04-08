@@ -330,7 +330,7 @@ const markuprenderToHtml = function({args, content}) {
 	try {
 		return toHtml(content);
 	} catch(err) {
-		return escapeXml(err.message);
+		return escapeXml((err as Error).message);
 	}
 }
 
@@ -338,17 +338,8 @@ const markuprenderToMd = function({args, content}) {
 	try {
 		return toMd(content);
 	} catch(err) {
-		return escapeMd(err.message);
+		return escapeMd((err as Error).message);
 	}
-}
-
-module.exports.convertLang = (text, format, target) => {
-	if(target === "html") {
-		Markup.render = markuprenderToHtml;
-	} else {
-	}
-	
-	return Markup.convert_lang(text, format);
 }
 
 Markup.INJECT = Markup => {

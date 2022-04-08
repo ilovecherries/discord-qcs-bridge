@@ -1,3 +1,5 @@
+import { Message } from "discord.js";
+
 const md = require("simple-markdown");
 const { escape12y } = require("./escapes");
 
@@ -120,12 +122,12 @@ const to12y = tokens => {
 	return out;
 }
 
-const mdto12y = text => {
+export const mdto12y = text => {
 	const parsed = parser(text, {inline: true})
 	return to12y(parsed);
 }
 
-const discordMessageTo12y = msg => {
+export const discordMessageTo12y = (msg: Message): string => {
 	let content = mdto12y(msg.content);
 	if(msg.attachments.size) {
 		content += content.length ? "\n" : "";
@@ -135,9 +137,4 @@ const discordMessageTo12y = msg => {
 	}
 	
 	return content;
-}
-
-module.exports = {
-	mdto12y,
-	discordMessageTo12y,
 }
