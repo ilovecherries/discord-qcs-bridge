@@ -87,7 +87,7 @@ async function getAvatar(author: User): Promise<string> {
 
 client.on('ready', async () => {
 	api = await QCS.login(process.env.QCS_USERNAME!, process.env.QCS_PASSWORD!);
-	const id = api.id;
+	const id = await api.getId();
 	ws = api.createSocket((res) => {
 		console.log(res);
 		switch (res.type) {

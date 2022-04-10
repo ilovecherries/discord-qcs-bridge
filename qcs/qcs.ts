@@ -99,8 +99,15 @@ export class QCS {
     return new QCS(token);
   }
 
-  public get id(): number {
-    return JSON.parse(Buffer.from(this.token.split(".")[1], 'base64').toString('ascii')).uid;
+  public async getId(): Promise<number> {
+    const res = await axios.get(`https://${API_DOMAIN}/api/status/token`, {
+        headers: {
+            'Authorization': `Bearer ${this.token}`,
+            'Content-Type': 'application/json'
+        }
+    })
+    const id = res.data.userId;
+    return id;
   }
 
   // this will also edit comments if you add an id
