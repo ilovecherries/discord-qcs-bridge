@@ -1,4 +1,4 @@
-const { escapeMd, escapeXml } = require("./escapes.js");
+const { escapeMd, escapeXml } = require("./escapes");
 const { Markup } = require('markup2/parse')
 
 const toMd = node => {

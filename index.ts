@@ -87,12 +87,12 @@ async function getAvatar(author: User): Promise<string> {
 
 client.on('ready', async () => {
 	api = await QCS.login(process.env.QCS_USERNAME!, process.env.QCS_PASSWORD!);
-	const id = await api.getId();
+	const id = api.id;
 	ws = api.createSocket((res) => {
 		console.log(res);
 		switch (res.type) {
 			case WebsocketResultType.Live: {
-				const data = res.data.data.message as RequestData;
+				const data = res.data.objects.message_event;
 				const events = res.data.events;
 				events?.filter((e) => e.type === WebsocketEventType.message).map(async (e) => {
 					if (e.action === WebsocketEventAction.delete) {
@@ -263,6 +263,11 @@ client.on('messageUpdate', async (before, after) => {
 				text: discordMessageTo12y(after as Message),
 				id: msg.qcsMessageId,
 				contentId: msg.qcsContentId,
+				values: {
+					n: after.member?.nickname || after.author!.username,
+					m: '12y',
+					a: await getAvatar(after.author!),
+				},
 			};
 			await api.writeComment(comment);
 		}
