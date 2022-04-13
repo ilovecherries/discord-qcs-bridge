@@ -5,7 +5,6 @@ import WebSocket = require("ws");
 import { Comment } from "./types/Comment";
 import { WebsocketResult } from "./types/WebsocketResult";
 import FormData from 'form-data';
-import { format } from "path";
 
 export const API_DOMAIN = "qcs.shsbs.xyz";
 
@@ -83,11 +82,11 @@ export const BasicPageDisplaySearch = function (
 
 export class QCS {
   private token: string;
-  private id: number;
+  private _id: number;
 
   constructor(token: string) {
     this.token = token;
-    this.id = -1;
+    this._id = -1;
   }
   public static async login(username: string, password: string): Promise<QCS> {
     const body = JSON.stringify({ username, password })
