@@ -88,8 +88,7 @@ async function getAvatar(author: User): Promise<string> {
 client.on('ready', async () => {
 	api = await QCS.login(process.env.QCS_USERNAME!, process.env.QCS_PASSWORD!);
 	const id = await api.getId();
-	ws = api.createSocket((res) => {
-		console.log(res);
+	const onMessage = (res: WebsocketResult) => {
 		switch (res.type) {
 			case WebsocketResultType.Live: {
 				const data = res.data.data.message as RequestData;
@@ -178,7 +177,19 @@ client.on('ready', async () => {
 				break;
 			}
 		}
-	});
+	}
+	const restartSocket = () => {
+		try {
+			ws = api.createSocket(onMessage,
+				() => setTimeout(restartSocket, 10000));;
+		} catch (e) {
+			console.error(e)
+			setTimeout(restartSocket, 10000);
+		}
+	}
+
+
+	restartSocket();
 });
 
 client.on('messageCreate', async (msg: Message) => {

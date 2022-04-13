@@ -131,7 +131,7 @@ export class QCS {
     })
   }
 
-  public createSocket(callback: (data: WebsocketResult) => void): WebSocket {
+  public createSocket(callback: (data: WebsocketResult) => void, onClose?: () => void): WebSocket {
     const ws = RawWebSocket(this.token);
     ws.on('message', (event) => {
       try {
@@ -141,6 +141,8 @@ export class QCS {
         console.error(e);
       }
     });
+
+    if (onClose) ws.on("close", onClose);
     return ws;
   }
 
