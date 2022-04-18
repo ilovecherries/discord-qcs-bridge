@@ -132,7 +132,7 @@ export const discordMessageTo12y = (msg: Message): string => {
 	if(msg.attachments.size) {
 		content += content.length ? "\n" : "";
 		content += msg.attachments.map(a => {
-			return a.spoiler ? "{#spoiler=image " + a.url + "}" : a.url
+			return a.spoiler ? "{#spoiler=image !" + a.url + "}" : `!${a.url}`
 		}).join("\n");
 	}
 	
