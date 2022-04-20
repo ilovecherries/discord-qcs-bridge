@@ -72,7 +72,7 @@ async function getAvatar(author: User): Promise<string> {
 				update: {
 					discordAvatarUrl: url,
 					qcsHash: hash,
-				}
+				},
 				create: {
 					discordAvatarUrl: url,
 					discordUid: id,
