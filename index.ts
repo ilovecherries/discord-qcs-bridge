@@ -55,10 +55,11 @@ async function getAvatar(author: User): Promise<string> {
 		const avatar = await prisma.avatar.findFirst({
 			where: {
 				discordUid: id,
+				discordAvatarUrl: url,
 			}
 		});
 
-		if (!avatar || avatar.discordAvatarUrl !== url) {
+		if (!avatar) {
 			const imageBuffer = await axios.get(url, { responseType: 'arraybuffer' });
 			await sharp(imageBuffer.data).toFile(`${id}.png`);
 			const data = new FormData();
