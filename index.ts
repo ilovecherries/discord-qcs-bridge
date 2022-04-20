@@ -65,8 +65,15 @@ async function getAvatar(author: User): Promise<string> {
 
 			data.append('file', createReadStream(`${id}.png`));
 			const hash = await api.uploadFile(data, 'discord-bridge-avatars');
-			await prisma.avatar.create({
-				data: {
+			await prisma.avatar.upsert({
+				where: {
+					discordUid: id,
+				},
+				update: {
+					discordAvatarUrl: url,
+					qcsHash: hash,
+				}
+				create: {
 					discordAvatarUrl: url,
 					discordUid: id,
 					qcsHash: hash,

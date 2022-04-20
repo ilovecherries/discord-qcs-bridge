@@ -31,5 +31,5 @@ model DiscordMessageStore {
 model Avatar {
   qcsHash String @unique
   discordAvatarUrl String @unique
-  discordUid String
+  discordUid String @unique
 }
