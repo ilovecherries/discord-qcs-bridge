@@ -129,7 +129,6 @@ export const mdto12y = text => {
 
 export const discordMessageTo12y = (msg: Message): string => {
 	let content = mdto12y(msg.content);
-	content = content.replaceAll("@", "ꊶ");
 	if(msg.attachments.size) {
 		content += content.length ? "\n" : "";
 		content += msg.attachments.map(a => {

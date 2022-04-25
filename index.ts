@@ -127,7 +127,8 @@ client.on('ready', async () => {
 					if (!m) return;
 					if (m.createUserId === id) return;
 					const u = data.user?.find((x) => x.id === m?.createUserId);
-					const content = Markup.convert_lang(m.text, m.values.m || 'plaintext');
+					let content = Markup.convert_lang(m.text, m.values.m || 'plaintext');
+					content = content.replaceAll("@", "ⓐ");
 					switch (e.action) {
 						case WebsocketEventAction.create: {
 							const channels = await prisma.channel.findMany({
