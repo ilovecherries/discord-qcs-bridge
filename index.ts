@@ -153,7 +153,8 @@ client.on('ready', async () => {
 											}
 										});
 									} catch (e) {
-										console.error(e)
+										console.error(e);
+										(channel as TextChannel).send("There was an error sending a message to this channel. Likely from being too long.");
 									}
 								} else {
 									console.error("Couldn't find a webhook to send a message with")

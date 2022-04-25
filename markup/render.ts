@@ -53,6 +53,8 @@ const toMd = node => {
 				(node.args.header ? "**" : "");
 		case "link":
 			return node.args.url + " [" + toMd(node.content) + "] ";
+		case "youtube":
+			return node.args.url;
 		case "list":
 			if(node.args.style) { // ol
 				return toMd(node.content);
