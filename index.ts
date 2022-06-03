@@ -14,10 +14,15 @@ import sharp from 'sharp';
 import FormData from 'form-data';
 import { createReadStream } from 'fs';
 
-import { Markup } from 'markup2/parse';
-import 'markup2/legacy';
-import './markup/render';
+
+import Markup_Parse_12y2 from "markup2/parse";
+import Markup_Legacy from "markup2/legacy";
+import Markup_Langs from "markup2/langs";
+import markuprenderToMd from './markup/render';
 import { discordMessageTo12y } from './markup/mdto12y';
+
+const parser = new Markup_Parse_12y2();
+const langs = new Markup_Langs([parser, new Markup_Legacy()]);
 
 const prisma = new PrismaClient();
 
@@ -127,7 +132,8 @@ client.on('ready', async () => {
 					if (!m) return;
 					if (m.createUserId === id) return;
 					const u = data.user?.find((x) => x.id === m?.createUserId);
-					let content = Markup.convert_lang(m.text, m.values.m || 'plaintext');
+					const tree = langs.parse(m.text, m.values.m || "plaintext", {});
+					let content = markuprenderToMd(tree);
 					content = content.replaceAll("@", "ⓐ");
 					switch (e.action) {
 						case WebsocketEventAction.create: {

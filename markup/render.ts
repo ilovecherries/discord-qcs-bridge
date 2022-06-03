@@ -344,6 +344,4 @@ const markuprenderToMd = function({args, content}) {
 	}
 }
 
-Markup.INJECT = Markup => {
-	Markup.render = markuprenderToMd;
-}
+export default markuprenderToMd;

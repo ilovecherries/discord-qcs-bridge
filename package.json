@@ -23,7 +23,7 @@
     "discord.js": "^13.6.0",
     "dotenv": "^16.0.0",
     "form-data": "^4.0.0",
-    "markup2": "github:ilovecherries/markup2",
+    "markup2": "github:12Me21/markup2",
     "sharp": "^0.30.3",
     "simple-markdown": "^0.7.3",
     "ws": "^8.5.0"
