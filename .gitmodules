@@ -1,0 +1,3 @@
+[submodule "contentapi-ts-bindings"]
+	path = contentapi-ts-bindings
+	url = https://github.com/ilovecherries/contentapi-ts-bindings.git
