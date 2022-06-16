@@ -1,5 +1,4 @@
 const { escapeMd, escapeXml } = require("./escapes");
-const { Markup } = require('markup2/parse')
 
 const toMd = node => {
 	if(node === undefined) {
@@ -54,7 +53,7 @@ const toMd = node => {
 		case "link":
 			return node.args.url + " [" + toMd(node.content) + "] ";
 		case "youtube":
-			return node.args.url;
+			return node.args.url + "\n";
 		case "list":
 			if(node.args.style) { // ol
 				return toMd(node.content);
