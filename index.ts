@@ -2,17 +2,14 @@ require('dotenv').config()
 
 import { Client, Intents, TextChannel, Webhook, Message, User } from 'discord.js';
 
-import { QCS } from './qcs/qcs';
-import { WebsocketEventAction, WebsocketEventType, WebsocketResult, WebsocketResultType } from './qcs/types/WebsocketResult';
-import WebSocket = require('ws');
-import { RequestData } from './qcs/types/RequestData';
 import { PrismaClient } from '@prisma/client';
-import { avatarUrl } from './qcs/types/User';
-import { Comment } from './qcs/types/Comment';
+import { Message as QCSMessage, User as QCSUser } from "contentapi-ts-bindings/dist/Views";
 import axios from 'axios';
 import sharp from 'sharp';
 import FormData from 'form-data';
 import { createReadStream } from 'fs';
+import { ContentAPI, ContentAPI_Session } from "contentapi-ts-bindings/dist/Helpers";
+import { ContentAPI_Node_Socket, uploadFile } from 'contentapi-ts-bindings/dist/NodeHelpers';
 
 
 import Markup_Parse_12y2 from "markup2/parse";
@@ -20,6 +17,9 @@ import Markup_Legacy from "markup2/legacy";
 import Markup_Langs from "markup2/langs";
 import markuprenderToMd from './markup/render';
 import { discordMessageTo12y } from './markup/mdto12y';
+import { LiveEventType } from 'contentapi-ts-bindings/dist/Live/LiveEvent';
+import { WebSocketResponseType } from 'contentapi-ts-bindings/dist/Live/WebSocketResponse';
+import { UserAction } from 'contentapi-ts-bindings/dist/Enums';
 
 const parser = new Markup_Parse_12y2();
 const langs = new Markup_Langs([parser, new Markup_Legacy()]);
@@ -28,8 +28,9 @@ const prisma = new PrismaClient();
 
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] })
 
-let api: QCS;
-let ws: WebSocket;
+let qcsApi = new ContentAPI("qcs.shsbs.xyz");
+let session: ContentAPI_Session;
+let socket: ContentAPI_Node_Socket;
 
 async function getWebhook(channel: TextChannel, id?: string): Promise<Webhook | undefined> {
 	const webhooks = await channel.fetchWebhooks();
@@ -70,7 +71,7 @@ async function getAvatar(author: User): Promise<string> {
 			const data = new FormData();
 
 			data.append('file', createReadStream(`${id}.png`));
-			const hash = await api.uploadFile(data, 'discord-bridge-avatars');
+			const hash = await uploadFile(session, data, 'discord-bridge-avatars');
 			await prisma.avatar.upsert({
 				where: {
 					discordUid: id,
@@ -98,16 +99,20 @@ async function getAvatar(author: User): Promise<string> {
 	}
 }
 
-client.on('ready', async () => {
-	api = await QCS.login(process.env.QCS_USERNAME!, process.env.QCS_PASSWORD!);
-	const id = await api.getId();
-	const onMessage = (res: WebsocketResult) => {
+const restartSession = async () => {
+	session = await ContentAPI_Session.login(qcsApi, process.env.QCS_USERNAME!, process.env.QCS_PASSWORD!)
+	const { id } = await session.getUserInfo();
+	socket = session.createSocket(ContentAPI_Node_Socket);
+	socket.badtoken = async () => {
+		await restartSession()
+	}
+	socket.callback = (res) => {
 		switch (res.type) {
-			case WebsocketResultType.Live: {
-				const data = res.data.objects.message_event;
+			case LiveEventType.live: {
+				const data = res.data.objects[WebSocketResponseType.message];
 				const events = res.data.events;
-				events?.filter((e) => e.type === WebsocketEventType.message).map(async (e) => {
-					if (e.action === WebsocketEventAction.delete) {
+				events?.filter((e) => e.type === WebSocketResponseType.message).map(async (e) => {
+					if (e.action === UserAction.delete) {
 						const whMsgDatas = await prisma.webhookMessage.findMany({
 							where: {
 								qcsMessageId: e.refId,
@@ -128,15 +133,16 @@ client.on('ready', async () => {
 							}
 						});
 					}
-					const m = data.message?.find((x) => x.id === e.refId);
+					console.log(data)
+					const m = (data?.message as QCSMessage[])?.find((x) => x.id === e.refId);
 					if (!m) return;
 					if (m.createUserId === id) return;
-					const u = data.user?.find((x) => x.id === m?.createUserId);
+					const u = (data?.user as QCSUser[])?.find((x) => x.id === m?.createUserId);
 					const tree = langs.parse(m.text, m.values.m || "plaintext", {});
 					let content = markuprenderToMd(tree);
 					content = content.replaceAll("@", "ⓐ");
 					switch (e.action) {
-						case WebsocketEventAction.create: {
+						case UserAction.create: {
 							const channels = await prisma.channel.findMany({
 								where: { qcsChannelId: m.contentId }
 							})
@@ -149,7 +155,7 @@ client.on('ready', async () => {
 										const whmsg = await webhook.send({
 											content,
 											username: u?.username!,
-											avatarURL: avatarUrl(u?.avatar!),
+											avatarURL: qcsApi.getFileURL(u?.avatar!, 64),
 										})
 										await prisma.webhookMessage.create({
 											data: {
@@ -167,45 +173,17 @@ client.on('ready', async () => {
 									console.error("Couldn't find a webhook to send a message with")
 								}
 							})
-							break;
-						}
-						case WebsocketEventAction.update: {
-							const whMsgDatas = await prisma.webhookMessage.findMany({
-								where: {
-									qcsMessageId: m.id,
-								}
-							});
-							whMsgDatas.map(async (w) => {
-								const channel = client.channels.cache.get(w.webhookMessageChannelId);
-								const webhook = await getWebhook(channel as TextChannel, w.webhookId);
-								try {
-									const whmsg = await webhook?.editMessage(w.webhookMessageId, {
-										content,
-									});
-								} catch (e) {
-									console.error(e);
-								}
-							});
-							break;
 						}
 					}
-				})
-				break;
+				});
 			}
 		}
 	}
-	const restartSocket = () => {
-		try {
-			ws = api.createSocket(onMessage,
-				() => setTimeout(restartSocket, 10000));;
-		} catch (e) {
-			console.error(e)
-			setTimeout(restartSocket, 10000);
-		}
-	}
 
+}
 
-	restartSocket();
+client.on('ready', async () => {
+	await restartSession();
 });
 
 client.on('messageCreate', async (msg: Message) => {
@@ -250,7 +228,7 @@ client.on('messageCreate', async (msg: Message) => {
 				where: { discordChannelId: msg.channelId }
 			})
 			channels.map(async (c) => {
-				const comment: Partial<Comment> = {
+				const comment: Partial<QCSMessage> = {
 					text: discordMessageTo12y(msg),
 					contentId: c.qcsChannelId,
 					values: {
@@ -260,7 +238,7 @@ client.on('messageCreate', async (msg: Message) => {
 					},
 				}
 				try {
-					const res = await api.writeComment(comment);
+					const res = await session.write("message", comment);
 					await prisma.discordMessageStore.create({
 						data: {
 							discordMessageId: msg.id,
@@ -286,7 +264,7 @@ client.on('messageUpdate', async (before, after) => {
 			}
 		});
 		if (msg) {
-			const comment: Partial<Comment> = {
+			const comment: Partial<QCSMessage> = {
 				text: discordMessageTo12y(after as Message),
 				id: msg.qcsMessageId,
 				contentId: msg.qcsContentId,
@@ -296,7 +274,7 @@ client.on('messageUpdate', async (before, after) => {
 					a: await getAvatar(after.author!),
 				},
 			};
-			await api.writeComment(comment);
+			await session.write("message", comment);
 		}
 	} catch (e) {
 		console.error(e)
@@ -311,7 +289,7 @@ client.on('messageDelete', async (msg) => {
 			}
 		});
 		if (m) {
-			api.deleteComment(m.qcsMessageId);
+			await session.delete("message", m.qcsMessageId);
 			await prisma.discordMessageStore.delete({
 				where: {
 					discordMessageId: msg.id,
