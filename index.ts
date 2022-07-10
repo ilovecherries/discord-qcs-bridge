@@ -133,7 +133,6 @@ const restartSession = async () => {
 							}
 						});
 					}
-					console.log(data)
 					const m = (data?.message as QCSMessage[])?.find((x) => x.id === e.refId);
 					if (!m) return;
 					if (m.createUserId === id) return;
