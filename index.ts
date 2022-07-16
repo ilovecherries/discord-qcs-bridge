@@ -8,7 +8,7 @@ import axios from 'axios';
 import sharp from 'sharp';
 import FormData from 'form-data';
 import { createReadStream } from 'fs';
-import { ContentAPI, ContentAPI_Session } from "contentapi-ts-bindings/dist/Helpers";
+import { ContentAPI, ContentAPI_Session, ContentAPI_Socket } from "contentapi-ts-bindings/dist/Helpers";
 import { ContentAPI_Node_Socket, uploadFile } from 'contentapi-ts-bindings/dist/NodeHelpers';
 
 
@@ -99,10 +99,26 @@ async function getAvatar(author: User): Promise<string> {
 	}
 }
 
+class Socket extends ContentAPI_Node_Socket {
+	onClose(): void {
+		console.log("websocket connection was closed. waiting 5 seconds to reconnect");
+		const retry = async () => {
+			try {
+				console.log("attempting reconnection");
+				await restartSession();
+			} catch {
+				console.error("reconnection failed, trying again in 5 seconds")
+				setTimeout(retry, 5000)
+			}
+		}
+		setTimeout(retry, 5000);
+	}
+}
+
 const restartSession = async () => {
 	session = await ContentAPI_Session.login(qcsApi, process.env.QCS_USERNAME!, process.env.QCS_PASSWORD!)
 	const { id } = await session.getUserInfo();
-	socket = session.createSocket(ContentAPI_Node_Socket);
+	socket = session.createSocket(Socket);
 	socket.badtoken = async () => {
 		await restartSession()
 	}
