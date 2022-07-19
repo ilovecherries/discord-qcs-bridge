@@ -188,6 +188,26 @@ const restartSession = async () => {
 									console.error("Couldn't find a webhook to send a message with")
 								}
 							})
+							break;
+						}
+						case UserAction.update: {
+							const whMsgDatas = await prisma.webhookMessage.findMany({
+								where: {
+									qcsMessageId: m.id,
+								}
+							});
+							whMsgDatas.map(async (w) => {
+								const channel = client.channels.cache.get(w.webhookMessageChannelId);
+								const webhook = await getWebhook(channel as TextChannel, w.webhookId);
+								try {
+									await webhook?.editMessage(w.webhookMessageId, {
+										content,
+									});
+								} catch (e) {
+									console.error(e);
+								}
+							});
+							break;
 						}
 					}
 				});
