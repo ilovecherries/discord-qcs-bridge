@@ -218,6 +218,7 @@ const restartSession = async () => {
 }
 
 client.on('ready', async () => {
+	console.log("Logged in!")
 	await restartSession();
 });
 
