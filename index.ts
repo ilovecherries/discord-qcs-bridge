@@ -65,7 +65,10 @@ async function getAvatar(author: User): Promise<string> {
 			}
 		});
 
-		if (!avatar) {
+		if (avatar) {
+			console.log("FOUND AVATAR")
+			return avatar.qcsHash;
+		} else {
 			const imageBuffer = await axios.get(url, { responseType: 'arraybuffer' });
 			await sharp(imageBuffer.data).toFile(`${id}.png`);
 			const data = new FormData();
@@ -88,9 +91,6 @@ async function getAvatar(author: User): Promise<string> {
 			});
 			console.log("NEW AVATAR")
 			return hash;
-		} else {
-			console.log("FOUND AVATAR")
-			return avatar.qcsHash;
 		}
 	} catch (e) {
 		console.error(e);
@@ -99,13 +99,18 @@ async function getAvatar(author: User): Promise<string> {
 	}
 }
 
+
+// prevent reconnections while one is in progress?
+
 class Socket extends ContentAPI_Node_Socket {
 	onClose(): void {
 		console.log("websocket connection was closed. waiting 5 seconds to reconnect");
+		// clear the websockets just in case it manages to still be active
+		this.socket?.removeAllListeners();
 		const retry = async () => {
 			try {
-				console.log("attempting reconnection");
 				await restartSession();
+				console.log("reconnection successful");
 			} catch {
 				console.error("reconnection failed, trying again in 5 seconds")
 				setTimeout(retry, 5000)
@@ -150,8 +155,8 @@ const restartSession = async () => {
 						});
 					}
 					const m = (data?.message as QCSMessage[])?.find((x) => x.id === e.refId);
-					if (!m) return;
-					if (m.createUserId === id) return;
+					if (!m) { return; }
+					if (m.createUserId === id) { return; }
 					const u = (data?.user as QCSUser[])?.find((x) => x.id === m?.createUserId);
 					const tree = langs.parse(m.text, m.values.m || "plaintext", {});
 					let content = markuprenderToMd(tree);
@@ -225,8 +230,9 @@ client.on('ready', async () => {
 client.on('messageCreate', async (msg: Message) => {
 	if (client.user!.id !== msg.author.id) {
 		const webhook = await getWebhook(msg.channel as TextChannel);
-		if (webhook && webhook.id === msg.author.id)
+		if (webhook && webhook.id === msg.author.id) {
 			return;
+		}
 		if (msg.content.startsWith('$bind')) {
 			const params = msg.content.split(' ')
 			if (params.length === 2) {
