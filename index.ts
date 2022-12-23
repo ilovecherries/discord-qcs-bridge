@@ -8,7 +8,7 @@ import axios from 'axios';
 import sharp from 'sharp';
 import FormData from 'form-data';
 import { createReadStream } from 'fs';
-import { ContentAPI, ContentAPI_Session, ContentAPI_Socket } from "contentapi-ts-bindings/dist/Helpers";
+import { ContentAPI, ContentAPI_Session } from "contentapi-ts-bindings/dist/Helpers";
 import { ContentAPI_Node_Socket, uploadFile } from 'contentapi-ts-bindings/dist/NodeHelpers';
 
 
