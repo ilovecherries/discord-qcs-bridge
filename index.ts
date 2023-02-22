@@ -1,6 +1,6 @@
 require('dotenv').config()
 
-import { Client, Intents, TextChannel, Webhook, Message, User, GuildMember } from 'discord.js';
+import { Client, Intents, TextChannel, Webhook, Message, User, GuildMember, PartialMessage } from 'discord.js';
 
 import { PrismaClient } from '@prisma/client';
 import { Message as QCSMessage, User as QCSUser } from "contentapi-ts-bindings/dist/Views";
@@ -99,6 +99,9 @@ async function getAvatar(author: User | GuildMember): Promise<string> {
 	}
 }
 
+function selectAvatarUser(msg: Message | PartialMessage): User | GuildMember {
+	return (msg.member?.avatarURL()) ? msg.member : msg.author!
+}
 
 // prevent reconnections while one is in progress?
 
@@ -276,7 +279,7 @@ client.on('messageCreate', async (msg: Message) => {
 					values: {
 						n: msg.member?.nickname || msg.author.username,
 						m: '12y',
-						a: await getAvatar(msg.member ?? msg.author),
+						a: await getAvatar(selectAvatarUser(msg)),
 					},
 				}
 				try {
@@ -313,7 +316,7 @@ client.on('messageUpdate', async (before, after) => {
 				values: {
 					n: after.member?.nickname || after.author!.username,
 					m: '12y',
-					a: await getAvatar(after.member ?? after.author!),
+					a: await getAvatar(selectAvatarUser(after)),
 				},
 			};
 			await session.write("message", comment);
