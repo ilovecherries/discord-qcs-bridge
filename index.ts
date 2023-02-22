@@ -1,6 +1,6 @@
 require('dotenv').config()
 
-import { Client, Intents, TextChannel, Webhook, Message, User } from 'discord.js';
+import { Client, Intents, TextChannel, Webhook, Message, User, GuildMember } from 'discord.js';
 
 import { PrismaClient } from '@prisma/client';
 import { Message as QCSMessage, User as QCSUser } from "contentapi-ts-bindings/dist/Views";
@@ -53,7 +53,7 @@ async function getWebhook(channel: TextChannel, id?: string): Promise<Webhook | 
 	return webhook
 }
 
-async function getAvatar(author: User): Promise<string> {
+async function getAvatar(author: User | GuildMember): Promise<string> {
 	try {
 		const url = author.avatarURL()!;
 		const id = author.id;
@@ -276,7 +276,7 @@ client.on('messageCreate', async (msg: Message) => {
 					values: {
 						n: msg.member?.nickname || msg.author.username,
 						m: '12y',
-						a: await getAvatar(msg.author),
+						a: await getAvatar(msg.member ?? msg.author),
 					},
 				}
 				try {
@@ -313,7 +313,7 @@ client.on('messageUpdate', async (before, after) => {
 				values: {
 					n: after.member?.nickname || after.author!.username,
 					m: '12y',
-					a: await getAvatar(after.author!),
+					a: await getAvatar(after.member ?? after.author!),
 				},
 			};
 			await session.write("message", comment);
